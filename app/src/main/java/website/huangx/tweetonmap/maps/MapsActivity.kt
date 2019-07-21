@@ -9,15 +9,18 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import website.huangx.tweetonmap.R
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 
 private const val PERMISSION_REQUEST_CODE_ACCESS_FINE_LOCATION = 0
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
 
     private var mMap: GoogleMap? = null
+
+    private lateinit var presenter: MapsPresenter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,6 +29,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        presenter = MapsPresenterImpl(this)
     }
 
     override fun onResume() {
@@ -34,6 +39,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestLocationPermission()
         }
+
+        presenter.onResume()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -73,4 +80,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
     }
+
+    override fun getContext(): Context = this
 }
