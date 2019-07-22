@@ -65,8 +65,8 @@ fun getTweetsInArea(
                                 user = it.getJSONObject("user").run {
                                     User(id = this.getString("id"),
                                         profileImgUrl =  when{
-                                        (this.get("profile_image_url") as? String) != null -> this.getString("profile_image_url")
                                         (this.get("profile_image_url_https") as? String) != null -> this.getString("profile_image_url_https")
+                                        (this.get("profile_image_url") as? String) != null -> this.getString("profile_image_url")
                                         else -> null
                                         },
                                         name = this.getString("name"),

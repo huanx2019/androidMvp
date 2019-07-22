@@ -11,10 +11,14 @@ import website.huangx.tweetonmap.R
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 
 private const val PERMISSION_REQUEST_CODE_ACCESS_FINE_LOCATION = 0
@@ -23,7 +27,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
 
     private var mMap: GoogleMap? = null
 
-    private lateinit var presenter: MapsPresenter
+    private lateinit var mPresenter: MapsPresenter
+
+    private var mLocationManager : LocationManager? = null
+
+    private var mLocationListener:LocationListener? = null
+
+    private val mAddedMarkers = mutableListOf<Marker>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,8 +42,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+        mLocationManager = (getSystemService(Context.LOCATION_SERVICE) as LocationManager)
 
-        presenter = MapsPresenterImpl(this)
+        mPresenter = MapsPresenterImpl(this)
     }
 
     override fun onResume() {
@@ -43,7 +54,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
             requestLocationPermission()
         }
 
-        presenter.onResume()
+        mPresenter.onResume()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -53,7 +64,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
             mMap!!.isMyLocationEnabled = true
         }
 
-        mMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(51.078306, -114.134961), 13.0f))
     }
 
     private fun requestLocationPermission() {
@@ -90,7 +100,47 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
 
     override fun getViwContext(): Context = this
 
-    override fun addMarker(markerOptions: MarkerOptions) {
-        mMap?.addMarker(markerOptions)
+    override fun addMarker(markerOptions: MarkerOptions): Marker? {
+        val marker = mMap?.addMarker(markerOptions)
+        if (marker != null) mAddedMarkers.add(marker)
+        return marker
+    }
+
+    @SuppressWarnings("MissingPermission")
+    override fun startLocationUpdate(onNewLocation: (Location?) -> Unit) {
+        if (mLocationListener != null) return
+
+        mLocationListener = object : LocationListener {
+            override fun onLocationChanged(location: Location?) {
+                onNewLocation(location)
+            }
+
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+            }
+
+            override fun onProviderEnabled(provider: String?) {
+            }
+
+            override fun onProviderDisabled(provider: String?) {
+            }
+        }
+
+        mLocationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 20f, mLocationListener)
+    }
+
+    override fun stopLocationUpdate() {
+        mLocationManager?.removeUpdates(mLocationListener)
+        mLocationListener = null
+    }
+
+    override fun clearMarkers() {
+        for (marker in mAddedMarkers) {
+            marker.remove()
+        }
+        mAddedMarkers.clear()
+    }
+
+    override fun moveCameraTo(latLng: LatLng) {
+        mMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
     }
 }

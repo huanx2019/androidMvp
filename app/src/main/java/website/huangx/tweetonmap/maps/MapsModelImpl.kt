@@ -1,6 +1,9 @@
 package website.huangx.tweetonmap.maps
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.widget.ImageView
+import com.android.volley.toolbox.ImageRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.gms.maps.model.LatLng
 import website.huangx.tweetonmap.R
@@ -36,4 +39,8 @@ class MapsModelImpl(private val context: Context): MapsModel {
     }
 
 
+    override fun getBitmapFromUrl(url: String, onSuccess: (Bitmap) -> Unit, onError: (Exception) -> Unit) {
+        ImageRequest(url, onSuccess, 0, 0, ImageView.ScaleType.FIT_XY, null, onError)
+            .addTo(q)
+    }
 }
