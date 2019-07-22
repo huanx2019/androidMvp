@@ -13,6 +13,9 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 
 private const val PERMISSION_REQUEST_CODE_ACCESS_FINE_LOCATION = 0
 
@@ -49,6 +52,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
             mMap!!.isMyLocationEnabled = true
         }
+
+        mMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(51.078306, -114.134961), 13.0f))
     }
 
     private fun requestLocationPermission() {
@@ -82,4 +87,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
     }
 
     override fun getContext(): Context = this
+
+    override fun getViwContext(): Context = this
+
+    override fun addMarker(markerOptions: MarkerOptions) {
+        mMap?.addMarker(markerOptions)
+    }
 }

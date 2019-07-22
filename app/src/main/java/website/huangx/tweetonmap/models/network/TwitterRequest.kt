@@ -10,13 +10,15 @@ import java.util.*
 import website.huangx.tweetonmap.map
 import website.huangx.tweetonmap.models.data.User
 
-fun getOAuth2Token(twitterApiKey: String,
-                   twitterApiSecret: String,
-                   onSuccess: (tokenType: String, tokenValue:String) -> Unit,
-                   onError: (VolleyError) -> Unit)
+fun getOAuth2Token(
+    twitterApiKey: String,
+    twitterApiSecret: String,
+    onSuccess: (tokenType: String, tokenValue:String) -> Unit,
+    onError: (Exception) -> Unit
+)
         : Request<JSONObject>
 
-        = object : Request<JSONObject> (Method.POST,"https://api.TwitterRequest.com/oauth2/token", onError) {
+        = object : Request<JSONObject> (Method.POST,"https://api.twitter.com/oauth2/token", onError) {
     override fun getHeaders(): MutableMap<String, String> {
         return mutableMapOf<String,String>().apply {
             put("authorization", "Basic ${Base64.getEncoder().encodeToString("$twitterApiKey:$twitterApiSecret".toByteArray())}")
@@ -33,7 +35,7 @@ fun getOAuth2Token(twitterApiKey: String,
                 ?: Response.error(VolleyError("No Token Returned"))
         }
         catch (e: Exception){
-            Response.error(ParseError(e))
+            Response.error(VolleyError(e.message))
         }
 
     override fun deliverResponse(response: JSONObject) =
@@ -41,10 +43,12 @@ fun getOAuth2Token(twitterApiKey: String,
             response["access_token"] as String) }
 }
 
-fun getTweetsInArea(latLng: LatLng, radius: Double, tokenType: String, tokenValue: String,
-                    onSuccess: (List<Tweet>) -> Unit,
-                    onError: (VolleyError) -> Unit): Request<List<Tweet>> =
-    object : Request<List<Tweet>>(Method.GET, "https://api.twitter.com/1.1/search/tweets.json?q=geocode:${latLng.latitude},${latLng.longitude},$radius&result_type=recent", onError) {
+fun getTweetsInArea(
+    latLng: LatLng, radius: Double, tokenType: String, tokenValue: String,
+    onSuccess: (List<Tweet>) -> Unit,
+    onError: (Exception) -> Unit
+): Request<List<Tweet>> =
+    object : Request<List<Tweet>>(Method.GET, "https://api.twitter.com/1.1/search/tweets.json?q=geocode:${latLng.latitude},${latLng.longitude},${radius}km&result_type=recent", onError) {
 
         override fun getHeaders(): MutableMap<String, String> = mutableMapOf(Pair("authorization", "$tokenType $tokenValue"))
 
@@ -54,25 +58,29 @@ fun getTweetsInArea(latLng: LatLng, radius: Double, tokenType: String, tokenValu
                     JSONObject(String(this)).getJSONArray("statuses")
                         .map {
                             Tweet(idString = it.get("id_str") as String,
-                                coordinates = (it.get("coordinates") as? JSONObject)
+                                coordinates = (it.get("geo") as? JSONObject)
                                       ?.getJSONArray("coordinates")?.run {
                                         LatLng(this.getDouble(0), this.getDouble(1))
                                     },
                                 user = it.getJSONObject("user").run {
-                                    User(id = it.getString("id"), profileImgUrl =  when{
-                                        (it.get("profile_image_url") as? String) != null -> it.getString("profile_image_url")
-                                        (it.get("profile_image_url_https") as? String) != null -> it.getString("profile_image_url_https")
+                                    User(id = this.getString("id"),
+                                        profileImgUrl =  when{
+                                        (this.get("profile_image_url") as? String) != null -> this.getString("profile_image_url")
+                                        (this.get("profile_image_url_https") as? String) != null -> this.getString("profile_image_url_https")
                                         else -> null
-                                    })
-                                }
+                                        },
+                                        name = this.getString("name"),
+                                        screenName = this.getString("screen_name"))
+                                },
+                                text = if(it.has("text")) it.getString("text") else ""
                             )
                         }
                         .filter { it.coordinates != null }
                         .run{Response.success(this, HttpHeaderParser.parseCacheHeaders(response))}
-                }?:Response.error(VolleyError())
+                }?:Response.error(VolleyError("Volley error"))
             }
             catch (e: Exception){
-                Response.error(VolleyError())
+                Response.error(VolleyError("Volley error"))
             }
 
         override fun deliverResponse(response: List<Tweet>) {
