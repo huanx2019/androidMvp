@@ -9,7 +9,8 @@ import com.google.android.gms.maps.model.LatLng
 import website.huangx.tweetonmap.R
 import website.huangx.tweetonmap.addTo
 import website.huangx.tweetonmap.models.data.Tweet
-import website.huangx.tweetonmap.models.network.getOAuth2Token
+import website.huangx.tweetonmap.models.network.requests.TweeterOAuth2TokenRequest
+import website.huangx.tweetonmap.models.network.requests.TweetsInAreaRequest
 import java.lang.Exception
 
 class MapsModelImpl(private val context: Context): MapsModel {
@@ -22,9 +23,9 @@ class MapsModelImpl(private val context: Context): MapsModel {
         onSuccess: (List<Tweet>) -> Unit,
         onError: (Exception) -> Unit
     ) {
-        getOAuth2Token(context.getString(R.string.twitter_api_key), context.getString(R.string.twitter_api_secret_key),
+        TweeterOAuth2TokenRequest(context.getString(R.string.twitter_api_key), context.getString(R.string.twitter_api_secret_key),
             { tokenType, tokenValue ->
-                website.huangx.tweetonmap.models.network.getTweetsInArea(latLng, radius, tokenType, tokenValue,{
+                TweetsInAreaRequest(latLng, radius, tokenType, tokenValue,{
                     onSuccess(it)
                 },
                     {

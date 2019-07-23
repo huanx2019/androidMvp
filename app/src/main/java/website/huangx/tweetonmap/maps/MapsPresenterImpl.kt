@@ -1,6 +1,5 @@
 package website.huangx.tweetonmap.maps
 
-import android.graphics.Color
 import android.location.Location
 import android.util.Log
 import android.view.LayoutInflater
