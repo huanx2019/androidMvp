@@ -23,7 +23,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 
 private const val PERMISSION_REQUEST_CODE_ACCESS_FINE_LOCATION = 0
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView, GoogleMap.OnMarkerClickListener {
 
     private var mMap: GoogleMap? = null
 
@@ -59,9 +59,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+        mMap?.setOnMarkerClickListener(this)
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-            mMap!!.isMyLocationEnabled = true
+            mMap?.isMyLocationEnabled = true
         }
 
     }
@@ -141,6 +142,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
     }
 
     override fun moveCameraTo(latLng: LatLng) {
-        mMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
+        mMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13f))
+    }
+
+    override fun onMarkerClick(p0: Marker?): Boolean {
+
+        if (p0 != null) mPresenter.onMarkerClick(p0)
+
+        return false
     }
 }

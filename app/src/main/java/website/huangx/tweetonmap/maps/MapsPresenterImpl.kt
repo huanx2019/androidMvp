@@ -6,13 +6,20 @@ import android.view.LayoutInflater
 import android.widget.ImageView
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.android.ui.IconGenerator
 import kotlinx.android.synthetic.main.tweet_marker_view.view.*
 import website.huangx.tweetonmap.R
+import website.huangx.tweetonmap.models.data.Tweet
+import java.util.*
 
 class MapsPresenterImpl(private val view:MapsView):MapsPresenter {
     private val model = MapsModelImpl(view.getContext())
+
+    private val tweets:MutableMap<String, Tweet> = mutableMapOf()
+
+    private var previousMarker: Marker? = null
 
     override fun onMapLoaded() {
         view.startLocationUpdate {
@@ -37,6 +44,7 @@ class MapsPresenterImpl(private val view:MapsView):MapsPresenter {
             LatLng(location.latitude, location.longitude), 5.0, {
                 val layoutInflater = LayoutInflater.from(view.getViwContext())
                 view.clearMarkers()
+                tweets.clear()
 
                 it.forEach { tweet ->
                     val contentView = layoutInflater
@@ -57,6 +65,7 @@ class MapsPresenterImpl(private val view:MapsView):MapsPresenter {
                         .icon(BitmapDescriptorFactory.fromBitmap(iconGenerator.makeIcon()))
                         .position(tweet.coordinates!!)
                         .anchor(iconGenerator.anchorU, iconGenerator.anchorV)
+                        .zIndex(0f)
 
                     view.addMarker(markerOptions)?.run {
                         if (tweet.user.profileImgUrl != null) {
@@ -70,6 +79,9 @@ class MapsPresenterImpl(private val view:MapsView):MapsPresenter {
                                     Log.d("test", error.message)
                                 })
                         }
+
+                        this.tag = tweet.idString
+                        tweets[tweet.idString] = tweet
                     }
 
                 }
@@ -77,5 +89,20 @@ class MapsPresenterImpl(private val view:MapsView):MapsPresenter {
             { error ->
                 Log.d("test", error.message)
             })
+    }
+
+    override fun onMarkerClick(marker: Marker) {
+        marker.zIndex = 10f
+
+        previousMarker?.zIndex = 0f
+        previousMarker = marker
+
+        if (!(marker?.tag as? String).isNullOrEmpty()
+            && tweets.containsKey(marker.tag!! as String )) {
+
+            val tweet = tweets[marker.tag!! as String]!!
+
+            Log.d("test", "Marker for ${tweet.idString}")
+        }
     }
 }
